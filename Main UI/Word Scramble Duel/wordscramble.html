@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Scramble Speed Duel (Hint from Start)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind configuration for custom colors/theme (Optional but good practice)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#007bff',
+                        'secondary': '#ffc107',
+                        'success': '#28a745',
+                        'error': '#dc3545',
+                        'penalty': '#ff6347', /* Tomato color for penalties */
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .letter-flash { animation: flash 0.5s ease-out; }
+        @keyframes flash {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* New: Flash for input success/fail */
+        .input-correct-flash { animation: input-correct 0.2s; }
+        .input-used-flash { animation: input-used 0.2s; }
+
+        @keyframes input-correct {
+            0% { background-color: #d4edda; }
+            100% { background-color: white; }
+        }
+
+        .message-area { transition: opacity 0.3s, height 0.3s; height: 0; overflow: hidden; opacity: 0; }
+        .message-success, .message-error, .message-hint { opacity: 1; height: auto; padding: 0.5rem; }
+        
+        /* Game Over Pulse Animation */
+        .game-over #time-display { animation: pulse-red 1s infinite alternate; }
+        @keyframes pulse-red {
+            from { color: #dc3545; transform: scale(1); }
+            to { color: #8b0000; transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen font-sans">
+
+    <header class="bg-primary text-white p-4 text-center shadow-lg">
+        <h1 class="text-3xl font-bold mb-1">Word Scramble Speed Duel</h1>
+        <div id="timer" class="text-xl font-semibold">Time Left: <span id="time-display">60</span>s</div>
+    </header>
+
+    <main id="game-main" class="max-w-4xl w-full mx-auto my-6 p-6 bg-white rounded-xl shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-6 game-not-active">
+        
+        <section class="col-span-1 text-center">
+            <h2 class="text-2xl font-semibold mb-3">The Scramble</h2>
+            <div id="scrambled-letters" class="text-5xl font-extrabold tracking-widest p-4 border-4 border-dashed border-secondary rounded-lg bg-yellow-50 mb-4 transition duration-500 ease-in-out">
+                P L A Y !
+            </div>
+            
+            <div id="game-stats" class="hidden text-left p-4 bg-gray-100 border rounded-lg mt-4">
+                <h3 class="text-xl font-bold mb-2 text-primary">Game Results</h3>
+                <p><strong>Words Found:</strong> <span id="stat-found">0</span> / <span id="stat-possible">0</span></p>
+                <p><strong>Longest Word:</strong> <span id="stat-longest">N/A</span></p>
+                <p class="mt-2 font-semibold">Breakdown:</p>
+                <ul id="stat-breakdown" class="list-disc pl-5"></ul>
+            </div>
+
+            <button id="start-game" class="start-button bg-success hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 w-full text-xl mt-4">
+                START GAME
+            </button>
+        </section>
+
+        <section class="col-span-1">
+            <h2 class="text-2xl font-semibold mb-2">Score: <span id="score-display" class="text-primary font-bold">0</span></h2>
+            
+            <h3 class="text-xl font-medium mb-2 text-penalty">Penalty: <span id="penalty-display" class="font-bold">0</span></h3>
+            
+            <h3 class="text-xl font-medium mb-2">Found Words</h3>
+            <div id="found-words-container" class="border border-gray-300 rounded-lg p-3 h-48 overflow-y-auto bg-gray-50">
+                <ul id="found-words-list" class="list-none p-0 space-y-1">
+                    </ul>
+            </div>
+        </section>
+
+        <section class="md:col-span-2 flex flex-col space-y-3">
+            <div class="flex items-stretch">
+                <input type="text" id="word-input" placeholder="Type your word here..." maxlength="7" disabled
+                       class="flex-grow p-3 text-lg border-2 border-gray-300 rounded-l-lg focus:border-primary focus:ring-primary outline-none transition duration-200">
+                <button id="submit-word" disabled
+                        class="bg-primary hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-lg shadow-md transition duration-300 disabled:opacity-50">
+                    Submit
+                </button>
+            </div>
+            
+            <div class="flex justify-between space-x-3">
+                 <div id="message" class="message-area text-center rounded-lg w-1/2 font-medium"></div>
+                
+                 <button id="hint-button" disabled
+                        class="w-1/2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded-lg shadow-md transition duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    Hint (-5 Pts)
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-auto">
+        <p class="text-sm">&copy; 2025 Scramble Duel. Speed and Skill! Tailwind CSS Powered.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

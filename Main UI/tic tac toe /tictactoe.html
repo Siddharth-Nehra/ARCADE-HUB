@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tic Tac Toe — Gaming Zone</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Square keeps perfect shape */
+    .square {
+      aspect-ratio: 1 / 1;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .square:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.05);
+    }
+    .square > span { transition: transform .12s; display:block; }
+    .square:active > span { transform: scale(.9); }
+    /* Smooth glow for modal backdrop */
+    #resultModal {
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-[#071a4a] via-[#1a1033] to-[#442963] text-gray-100 flex items-center justify-center p-6">
+  <div class="w-full max-w-4xl mx-auto">
+    <header class="mb-6 flex items-center justify-between bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10">
+      <div>
+        <h1 class="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
+          🎮 Gaming Zone — Tic Tac Toe
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">Two-player local game. Neon Galaxy Edition.</p>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="text-right">
+          <div class="text-xs text-gray-400">Current Turn</div>
+          <div id="turnIndicator" class="mt-1 px-3 py-1 rounded-md bg-gradient-to-r from-cyan-500 to-blue-600 text-sm font-medium shadow-lg">
+            X
+          </div>
+        </div>
+
+        <button id="newGameBtn" class="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 rounded-md text-white shadow-md">
+          New Game
+        </button>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Board -->
+      <section class="md:col-span-2 bg-white/10 backdrop-blur-md border border-white/10 p-6 rounded-xl shadow-lg">
+        <div id="board" class="grid grid-cols-3 gap-3 w-full max-w-md mx-auto">
+          <div id="cell-0" data-cell-index="0" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-1" data-cell-index="1" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-2" data-cell-index="2" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-3" data-cell-index="3" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-4" data-cell-index="4" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-5" data-cell-index="5" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-6" data-cell-index="6" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-7" data-cell-index="7" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+          <div id="cell-8" data-cell-index="8" class="square bg-gray-800/70 flex items-center justify-center rounded-md cursor-pointer text-5xl font-extrabold text-cyan-400"></div>
+        </div>
+      </section>
+
+      <!-- Sidebar / Info -->
+      <aside class="bg-white/10 backdrop-blur-md border border-white/10 p-6 rounded-xl shadow-lg flex flex-col gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-cyan-400">Scoreboard</h2>
+          <div class="mt-3 grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-md bg-gray-900/60 text-center border border-cyan-400/20">
+              <div class="text-xs text-gray-400">Player X</div>
+              <div id="scoreX" class="text-2xl font-bold mt-1 text-cyan-400">0</div>
+            </div>
+            <div class="p-3 rounded-md bg-gray-900/60 text-center border border-pink-400/20">
+              <div class="text-xs text-gray-400">Player O</div>
+              <div id="scoreO" class="text-2xl font-bold mt-1 text-pink-400">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm text-gray-400 mb-2">Controls</h3>
+          <div class="flex flex-col gap-2">
+            <button id="resetScoreBtn" class="w-full px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 rounded-md text-white shadow-md">
+              Reset Scores
+            </button>
+            <button id="clearBtn" class="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-md text-white shadow-md">
+              Clear Board
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm text-gray-400 mb-2">Game Messages</h3>
+          <div id="gameMessage" class="min-h-[44px] p-3 rounded-md bg-gray-900/70 text-sm text-gray-200 border border-white/10">
+            Ready — X starts.
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="resultModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+    <div class="bg-gradient-to-br from-purple-800 via-indigo-800 to-cyan-800 text-white rounded-lg w-full max-w-sm p-6 shadow-2xl border border-white/10">
+      <h2 id="resultTitle" class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
+        Result
+      </h2>
+      <p id="resultText" class="mb-4 text-center">Something</p>
+      <div class="flex gap-3 justify-center">
+        <button id="modalNewGame" class="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded">
+          New Game
+        </button>
+        <button id="modalClose" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Script -->
+  <script src="tic-tac-toe.js" defer></script>
+</body>
+</html>

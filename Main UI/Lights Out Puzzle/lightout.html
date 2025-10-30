@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lights Out Puzzle</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom CSS for the Ocean Depths / Bioluminescence theme */
+        body {
+            background-color: #0A1931; /* Deep Navy Blue Background */
+        }
+        #game-container {
+            background-color: #152C4C; /* Muted Sapphire Container */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            max-width: 480px; 
+            width: 95%;
+        }
+        /* Light Styling - Key to the visual puzzle */
+        .light {
+            transition: background-color 0.3s, box-shadow 0.3s, transform 0.1s;
+            cursor: pointer;
+            width: 100%;
+            aspect-ratio: 1; 
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            user-select: none;
+            color: #1a1a2e;
+        }
+
+        /* ON state: Electric Turquoise Glow (Bioluminescence) */
+        .on {
+            background-color: #00EAD3; 
+            box-shadow: 0 0 18px #00EAD3, 0 0 8px #00EAD3 inset;
+            border: 1px solid #00EAD3;
+        }
+
+        /* OFF state: Ultra Deep Blue/Black (The Abyss) */
+        .off {
+            background-color: #050C1B; 
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+            border: 1px solid #152C4C;
+        }
+        
+        /* Click interaction */
+        .light:active {
+            transform: scale(0.95);
+        }
+
+        /* Header Styling - Decent Gold/Ochre Color without continuous glow */
+        .ocean-title {
+            color: #FFD700; /* Rich Gold/Ochre color */
+            transition: text-shadow 0.3s;
+        }
+        /* Subtle Hover Effect for interactivity */
+        .ocean-title:hover {
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6); /* Soft gold shadow on hover */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center justify-center min-h-screen text-white">
+
+    <!-- MAIN HEADER -->
+    <header class="mb-8 text-center w-full">
+        <h1 class="text-6xl md:text-7xl font-black tracking-widest uppercase ocean-title">
+            Ocean Depths
+        </h1>
+        <!-- Subtitle color updated to match gold accent better -->
+        <p class="text-lg text-[#FEEB9A] mt-2 font-medium">Illuminate the abyss to find the surface!</p>
+    </header>
+
+    <div id="game-container" class="rounded-xl p-6 flex flex-col gap-6">
+        
+        <!-- Game Status and Reset Area -->
+        <div class="p-4 rounded-lg bg-[#244C7C] backdrop-blur-sm space-y-4">
+            <h2 class="text-xl font-bold mb-2 text-white border-b border-white/20 pb-2">Bioluminescence Log</h2>
+
+            <div class="text-lg font-bold flex justify-between">
+                <p>Moves: <span id="moves" class="text-yellow-300">0</span></p>
+                <p id="game-message" class="text-sm font-semibold text-white/90"></p>
+            </div>
+            
+            <button id="restart-button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition duration-150 shadow-md hover:shadow-lg">
+                Venture Deeper (Restart)
+            </button>
+        </div>
+
+        <!-- Game Board Container -->
+        <div id="board-container" class="p-2">
+            <!-- Game board will be dynamically injected here -->
+        </div>
+
+    </div>
+    
+    <!-- FOOTER -->
+    <footer class="mt-8 text-center text-gray-400/80 p-4 w-full max-w-4xl rounded-lg">
+        <p class="text-lg text-[#00EAD3] font-semibold">
+            The pressure is on. Every flip creates a ripple.
+        </p>
+        <p class="mt-1 text-xs">Developed in Canvas Environment | Deep Sea Logic Puzzle</p>
+    </footer>
+
+    <script>
+        // --- GAME CONSTANTS ---
+        const GRID_SIZE = 5; // The game board is 5x5
+        
+        // --- GAME STATE VARIABLES ---
+        let GRID; // The 2D array storing the state (0 = OFF, 1 = ON)
+        let moves = 0;
+        let isSolved = false;
+        
+        // --- HTML ELEMENTS ---
+        const boardContainer = document.getElementById('board-container');
+        const movesEl = document.getElementById('moves');
+        const messageBox = document.getElementById('game-message');
+        const restartButton = document.getElementById('restart-button');
+
+        // --- GAME LOGIC ---
+
+        /**
+         * Toggles the state (0 to 1 or 1 to 0) of a single light.
+         * Note: This function only modifies the model (GRID state).
+         * @param {number} r - Row index.
+         * @param {number} c - Column index.
+         */
+        function flipLight(r, c) {
+            if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+                GRID[r][c] = 1 - GRID[r][c]; // Toggle: 0 -> 1, 1 -> 0
+            }
+        }
+        
+        /**
+         * Generates a solvable starting grid by starting all off and applying
+         * random clicks to ensure a challenging, but solvable, initial state.
+         * @param {number} size - The side length of the square grid.
+         * @returns {Array<Array<number>>} The initial game grid.
+         */
+        function generateInitialGrid(size) {
+            let newGrid = Array.from({ length: size }, () => Array(size).fill(0));
+            
+            // Apply a number of random "clicks" to establish a solvable puzzle state.
+            const numRandomClicks = 10 + Math.floor(Math.random() * 10);
+            
+            for (let i = 0; i < numRandomClicks; i++) {
+                const r = Math.floor(Math.random() * size);
+                const c = Math.floor(Math.random() * size);
+                
+                // Temporarily apply the full game logic flip
+                const positions = [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+                positions.forEach(([pr, pc]) => {
+                    if (pr >= 0 && pr < size && pc >= 0 && pc < size) {
+                        newGrid[pr][pc] = 1 - newGrid[pr][pc];
+                    }
+                });
+            }
+            return newGrid;
+        }
+        
+        /**
+         * Handles the click event for a light, applying the puzzle logic.
+         * @param {number} r - Row index of the clicked light.
+         * @param {number} c - Column index of the clicked light.
+         */
+        function handleLightClick(r, c) {
+            if (isSolved) return;
+
+            // 1. Apply flip logic to center and neighbors
+            const positions = [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+            positions.forEach(([pr, pc]) => flipLight(pr, pc));
+            
+            // 2. Increment moves
+            moves++;
+            
+            // 3. Re-render UI and update status
+            renderBoard();
+            updateStatus();
+            
+            // 4. Check win
+            if (checkWin()) {
+                isSolved = true;
+                showMessage(`ASCENDED in ${moves} moves! The path is clear.`, 'text-yellow-300');
+            }
+        }
+        
+        /**
+         * Checks if the win condition (all lights are off) has been met.
+         * @returns {boolean} True if all lights are 0 (off), false otherwise.
+         */
+        function checkWin() {
+            return GRID.every(row => row.every(state => state === 0));
+        }
+
+        // --- RENDERING FUNCTIONS ---
+
+        /**
+         * Renders the game board structure and attaches event listeners.
+         */
+        function renderBoard() {
+            boardContainer.innerHTML = '';
+            boardContainer.className = `grid gap-3`;
+            boardContainer.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+
+            GRID.forEach((row, r) => {
+                row.forEach((state, c) => {
+                    const light = document.createElement('div');
+                    light.className = `light ${state === 1 ? 'on' : 'off'}`;
+                    
+                    // Attach the click handler, passing the light's coordinates
+                    light.addEventListener('click', () => handleLightClick(r, c));
+                    
+                    boardContainer.appendChild(light);
+                });
+            });
+        }
+        
+        /**
+         * Updates the display elements for moves and game message.
+         */
+        function updateStatus() {
+            movesEl.textContent = moves;
+            if (!isSolved) {
+                showMessage('The darkness awaits...', 'text-white/90');
+            }
+        }
+        
+        /**
+         * Updates the game message box.
+         */
+        function showMessage(text, classes) {
+            messageBox.textContent = text;
+            messageBox.className = `text-sm font-semibold ${classes}`;
+        }
+
+        // --- INITIALIZATION ---
+
+        /**
+         * Resets and initializes the game state.
+         */
+        function initGame() {
+            isSolved = false;
+            moves = 0;
+            // Generate a fresh, solvable puzzle
+            GRID = generateInitialGrid(GRID_SIZE); 
+            
+            renderBoard();
+            updateStatus();
+            showMessage('Dive in! Turn off all the bioluminescence.', 'text-yellow-300');
+        }
+
+        // Event listener for the restart button
+        restartButton.addEventListener('click', initGame);
+
+        // Start the game on load
+        window.onload = initGame;
+    </script>
+</body>
+</html>

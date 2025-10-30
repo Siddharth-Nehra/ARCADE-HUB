@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Team</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #dfe9f3, #ffffff); /* gradient background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column; /* allows footer to stay at bottom */
+        }
+
+        .team-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .profile-card {
+            background-color: #fff;
+            border: 2px solid #4a90e2;   
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+        }
+
+        .profile-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            border-color: #357ABD; 
+        }
+
+        .profile-image-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 20px;
+            border: 4px solid #4a90e2;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .role {
+            font-size: 1.1em;
+            color: #777;
+            margin-bottom: 20px;
+        }
+
+        .social-links {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .social-links a {
+            color: #fff;
+            background-color: #4a90e2;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .social-links a:hover {
+            background-color: #357ABD;
+            transform: translateY(-2px);
+        }
+
+        /* --- Mobile Responsive Fix --- */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    .team-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .profile-card {
+        min-width: 100%;
+        max-width: 100%;
+        padding: 20px;
+    }
+
+    .profile-image-container {
+        width: 120px;
+        height: 120px;
+    }
+
+    h2 {
+        font-size: 1.5em;
+    }
+
+    .role {
+        font-size: 1em;
+    }
+
+    .social-links a {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+
+    footer {
+        padding: 20px 10px;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .footer-box {
+        min-width: 100%;
+        text-align: center;
+    }
+
+    .footer-heading {
+        font-size: 18px;
+    }
+
+    .footer-box h3 {
+        font-size: 18px;
+    }
+
+    .footer-box li {
+        font-size: 14px;
+    }
+
+    .footer-bottom {
+        font-size: 0.8em;
+    }
+}
+
+        /* --- Footer Styles --- */
+        footer {
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 30px 20px;
+            margin-top: 50px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .footer-heading {
+            font-size: 21px;
+            color: #BDC3C7;
+            margin-bottom: 20px;
+        }
+
+        .footer-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 60px;
+            max-width: 700px; 
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .footer-box h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #D6C6E1;
+        }
+
+        .footer-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-box li {
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .label {
+            display: inline-block;
+            width: 70px;
+            font-weight: bold;
+            text-align: right;
+            margin-right: 5px;
+        }
+
+        .footer-box a {
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-box a:hover {
+            color: #1abc9c;
+        }
+
+        .footer-bottom {
+            margin-top: 40px;
+            border-top: 1px solid #4a637a;
+            padding-top: 15px;
+            font-size: 0.9em;
+            color: #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="team-container">
+
+    <div class="profile-card">
+        <div class="profile-image-container">
+            <img src="vishav copy.jpeg" alt="Vishav Yadav" class="profile-image">
+        </div>
+        <h2>Vishav Yadav</h2>
+        <p class="role">Lead Developer</p>
+        <div class="social-links">
+            <a href="https://www.linkedin.com/in/vishav-rao-a253b833b" target="_blank">LinkedIn</a>
+            <a href="https://github.com/vishavrao" target="_blank">GitHub</a>
+        </div>
+    </div>
+
+    <div class="profile-card">
+        <div class="profile-image-container">
+            <img src="siddharth copy.jpg" alt="Siddharth Nehra" class="profile-image">
+        </div>
+        <h2>Siddharth Nehra</h2>
+        <p class="role">UI/UX Designer</p>
+        <div class="social-links">
+            <a href="https://www.linkedin.com/in/siddharth-nehra-ab0825366" target="_blank">LinkedIn</a>
+            <a href="https://github.com/Siddharth-Nehra" target="_blank">GitHub</a>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <h1 class="footer-heading">Support</h1>
+    <div class="footer-container">
+        <!-- Vishav Section -->
+        <div class="footer-box">
+            <h3>Vishav Yadav</h3>
+            <ul>
+                <li><span class="label">Gmail:</span> <a href="mailto:vishavydv0608@gmail.com">vishavydv0608@gmail.com</a></li>
+                <li><span class="label">Phone:</span> <a href="tel:+91870X76261X">+91 870X76261X</a></li>
+            </ul>
+        </div>
+
+        <!-- Sidharth Section -->
+        <div class="footer-box">
+            <h3>Siddharth Nehra</h3>
+            <ul>
+                <li><span class="label">Gmail:</span> <a href="mailto:nehrasiddharth669@gmail.com">nehrasiddharth669@gmail.com</a></li>
+                <li><span class="label">Phone:</span> <a href="tel:+91798X6602X4">+91 798X6602X4</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Updated Professional Footer Line -->
+    <div class="footer-bottom">
+        <p>
+            By continuing to use this site, you agree to our Terms of Service, Privacy Policy, and Cookie Policy. 
+            All content and designs are the property of their respective contributors. 
+            2025 © FlexiFFCS | VIT Vellore Campus. All rights reserved.
+        </p>
+    </div>
+</footer>
+
+</body>
+</html>

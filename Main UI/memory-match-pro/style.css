@@ -1,0 +1,56 @@
+/* card 3D flip */
+.card {
+  perspective: 1000px;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  padding-top: 100%; /* square */
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(.2,.8,.2,1);
+  cursor: pointer;
+}
+
+.card.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center; justify-content: center;
+  font-size: 2rem;
+  backface-visibility: hidden;
+}
+
+/* front is the face-down side */
+.card-front {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+/* back shows the emoji */
+.card-back {
+  background-color: #ffffff;
+  color: #222;
+  transform: rotateY(180deg);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+/* matched state */
+.card.matched .card-back {
+  box-shadow: 0 8px 30px rgba(255,255,255,0.12);
+  transform: rotateY(180deg) scale(1.02);
+}
+
+/* responsive grid spacing */
+#gameBoard { width: 100%; }
+
+/* Confetti canvas occupies whole screen (pointer-events none so clicks pass through) */
+#confettiCanvas { z-index: 60; }
+
+/* visually improve select & buttons when using tailwind */

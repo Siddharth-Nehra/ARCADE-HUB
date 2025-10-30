@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Memory Match Pro 🧩</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700 text-white flex flex-col items-center justify-center p-6">
+
+  <header class="text-center mb-8">
+    <h1 class="text-4xl font-extrabold mb-2">🧩 Memory Match Pro</h1>
+    <p class="text-gray-300">Match all pairs — multiple difficulties, timer, moves, confetti.</p>
+  </header>
+
+  <div class="flex flex-col md:flex-row gap-8 items-center justify-center w-full max-w-6xl px-4">
+    <!-- Game board -->
+    <div id="gameBoard" class="grid gap-4 w-full max-w-3xl"></div>
+
+    <!-- Sidebar -->
+    <aside class="bg-white/10 backdrop-blur-lg p-6 rounded-2xl w-72 shadow-lg flex flex-col items-center">
+      <h2 class="text-2xl font-semibold mb-4">Game Stats</h2>
+      <p class="text-lg mb-2">Moves: <span id="moves" class="font-bold">0</span></p>
+      <p class="text-lg mb-2">Time: <span id="timer" class="font-bold">0s</span></p>
+
+      <h3 class="mt-4 mb-2 text-sm text-gray-300 uppercase">Difficulty</h3>
+      <select id="difficulty" class="bg-gray-800 text-white rounded-lg px-3 py-2 w-full mb-4">
+        <option value="easy">Easy (4 × 4)</option>
+        <option value="medium" selected>Medium (4 × 5)</option>
+        <option value="hard">Hard (6 × 6)</option>
+      </select>
+
+      <button id="restartBtn" class="mt-2 px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium transition">Restart</button>
+    </aside>
+  </div>
+
+  <!-- Win Modal -->
+  <div id="winModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
+    <div class="bg-white text-gray-800 rounded-xl p-6 text-center w-full max-w-sm shadow-2xl">
+      <h2 class="text-3xl font-bold mb-2">🎉 You Win!</h2>
+      <p class="text-lg mb-4">
+        You finished in <span id="finalTime" class="font-bold"></span> seconds with
+        <span id="finalMoves" class="font-bold"></span> moves.
+      </p>
+      <div class="flex justify-center gap-3">
+        <button id="playAgainBtn" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none"></canvas>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

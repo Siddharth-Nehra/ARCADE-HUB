@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🪨📄✂️ Rock Paper Scissors Ultimate</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 flex flex-col items-center justify-center text-white">
+
+  <header class="text-center mb-10">
+    <h1 class="text-5xl font-extrabold mb-2 tracking-wide">🪨📄✂️ Rock Paper Scissors</h1>
+    <p class="text-gray-300">Best of 5 rounds — Can you beat the computer?</p>
+  </header>
+
+  <main class="glass p-8 rounded-3xl shadow-2xl w-[90%] max-w-4xl text-center">
+    
+    <!-- Scoreboard -->
+    <div class="flex justify-around text-center mb-10">
+      <div>
+        <h2 class="text-xl font-bold mb-2 text-indigo-300">You</h2>
+        <p id="playerScore" class="text-5xl font-bold text-indigo-400">0</p>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold mb-2 text-pink-300">Computer</h2>
+        <p id="computerScore" class="text-5xl font-bold text-pink-400">0</p>
+      </div>
+    </div>
+
+    <!-- Hands Animation -->
+    <div class="hands flex justify-around items-center mb-10">
+      <div id="playerHand" class="hand player">✊</div>
+      <div id="computerHand" class="hand computer">✊</div>
+    </div>
+
+    <!-- Message -->
+    <p id="message" class="text-xl mb-6 text-gray-300">Choose your move 👇</p>
+
+    <!-- Buttons -->
+    <div class="flex justify-center gap-8 mb-8 flex-wrap">
+      <button class="choice-btn" data-choice="rock">🪨<span>Rock</span></button>
+      <button class="choice-btn" data-choice="paper">📄<span>Paper</span></button>
+      <button class="choice-btn" data-choice="scissors">✂️<span>Scissors</span></button>
+    </div>
+
+    <!-- Restart -->
+    <button id="restartBtn" class="hidden bg-indigo-500 hover:bg-indigo-600 px-6 py-2 rounded-xl font-semibold transition">Restart Game</button>
+
+  </main>
+
+  <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+  <script src="script.js"></script>
+</body>
+</html>

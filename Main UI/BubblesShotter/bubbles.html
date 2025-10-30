@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Color Bubble Burst</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter Font -->
+    <style>
+        @import url('https://fonts.fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e; /* Deep blue/purple background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            flex-direction: column; /* Allows stacking header/footer/app */
+        }
+
+        /* Starfield background (less dominant) */
+        body {
+            background-image: radial-gradient(#3a3058, #1a1a2e 80%);
+        }
+
+        #app {
+            margin: auto;
+        }
+
+        /* Custom Styles for Game Canvas and Bubbles */
+        #gameCanvas {
+            box-shadow: 0 0 30px rgba(0, 201, 167, 0.5) inset, 0 0 50px rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            touch-action: none; 
+            background: linear-gradient(180deg, #3c2a5c 0%, #1a1a2e 100%);
+            border: 4px solid #00c9a7; /* Vibrant Cyan border */
+        }
+        
+        /* Chucky Button Style */
+        .game-button {
+            border-radius: 9999px; /* Fully rounded */
+            font-weight: 700;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5), 0 8px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(0);
+            transition: all 0.1s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .game-button:active {
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.2);
+            transform: translateY(2px);
+        }
+        /* Added subtle hover animation for all buttons */
+        .game-button:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        /* Modal specific styling */
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- HEADER: Game Title Area -->
+    <header class="w-full max-w-6xl text-center mb-6 p-4 bg-[#10071c] rounded-xl border-2 border-[#00c9a7]/50 shadow-xl">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-300">
+            BUBBLE BURST ARCADE
+        </h1>
+    </header>
+
+    <!-- Main Game Container: Responsive layout -->
+    <div id="app" class="w-full max-w-6xl flex flex-col md:flex-row gap-6 p-4 rounded-3xl shadow-2xl transition-all duration-300 bg-[#1a0f28] border-4 border-[#00c9a7]">
+        
+        <!-- Game Canvas Area (Left/Top) -->
+        <div id="gameArea" class="relative overflow-hidden rounded-2xl w-full md:w-[480px] flex-shrink-0">
+            <div class="flex justify-center items-center">
+                <canvas id="gameCanvas" width="480" height="600"></canvas>
+            </div>
+            
+            <!-- Next Bubble Preview - MINIMAL SIZE -->
+            <!-- Container is tiny and fully rounded -->
+            <div id="nextBubblePreview" class="absolute bottom-2 left-2 p-0.5 bg-gray-900 bg-opacity-50 rounded-full shadow-lg border border-gray-600">
+                <!-- Canvas size is 28x28 -->
+                <canvas id="nextBubbleCanvas" width="28" height="28" class="rounded-full"></canvas>
+            </div>
+        </div>
+
+        <!-- Scoreboard and Controls Sidebar (Right/Bottom) -->
+        <div id="controlPanel" class="w-full md:flex-grow flex flex-col justify-between p-4 bg-[#10071c] rounded-2xl border-2 border-[#00c9a7]">
+            
+            <!-- Game Stats Section (Replaces old Title/Score wrapper) -->
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-bold text-gray-300 mb-4 uppercase tracking-widest">Game Stats</h2>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <!-- Score Display -->
+                    <div class="p-3 bg-[#00c9a7] rounded-xl shadow-inner border-b-4 border-teal-700">
+                        <p class="text-sm font-black text-black uppercase">Score</p>
+                        <div id="scoreValue" class="text-3xl font-black text-white mt-1 leading-none drop-shadow-lg text-black">0</div>
+                    </div>
+                    <!-- Ammo Display -->
+                    <div class="p-3 bg-[#ffcc00] rounded-xl shadow-inner border-b-4 border-yellow-700">
+                        <p class="text-sm font-black text-black uppercase">Shots Left</p>
+                        <div id="ammoValue" class="text-3xl font-black text-white mt-1 leading-none drop-shadow-lg text-black">30</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="flex flex-col space-y-4">
+                <!-- LEVEL SELECTION BUTTON (New) -->
+                <button id="levelButton" class="game-button bg-[#af52de] hover:bg-[#8e45b9] text-white py-3 text-lg flex items-center justify-center">
+                    <span class="mr-2">🚀</span> LEVEL: <span id="currentLevelDisplay" class="font-extrabold ml-2">MEDIUM</span>
+                </button>
+                
+                <!-- SWAP BUTTON -->
+                <button id="swapButton" class="game-button bg-[#007aff] hover:bg-[#005bb5] text-white py-3 text-lg">
+                    <span class="mr-2">🔄</span> SWAP BUBBLE
+                </button>
+                <button id="restartButton" class="game-button bg-[#34c759] hover:bg-[#2eaa4b] text-white py-3 text-lg">
+                    <span class="mr-2">♻️</span> RESTART GAME
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over/Win Modal -->
+        <div id="messageOverlay" class="hidden absolute inset-0 bg-black bg-opacity-80 modal-overlay z-40 flex items-center justify-center rounded-3xl">
+            <div class="bg-[#1e2730] p-8 rounded-xl text-center shadow-2xl w-11/12 max-w-sm border-4 border-[#ff3b30]">
+                <h2 id="messageTitle" class="text-4xl font-black mb-4 uppercase tracking-widest text-[#ff3b30]"></h2>
+                <p id="messageText" class="text-lg text-white mb-8">Final Score: <span class="font-bold text-yellow-400" id="finalScore">0</span></p>
+                <button id="playAgainButton" class="game-button bg-[#34c759] hover:bg-[#2eaa4b] text-white py-3 px-6 text-xl">
+                    Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER: Credits and Instructions -->
+    <footer class="w-full max-w-6xl text-center mt-6 p-3 text-sm text-gray-400 bg-[#10071c] rounded-xl border border-[#00c9a7]/50 shadow-lg">
+        <p>A simple bubble shooter game built with Canvas, JS, and Tailwind CSS.</p>
+        <p class="mt-1 text-xs text-gray-500">Aim by **Mouse Click** / **Touch End**. Use the **Level Button** to change difficulty.</p>
+    </footer>
+
+    <script type="module">
+        // --- Level Configuration (New) ---
+        const LEVEL_CONFIGS = {
+            EASY: {
+                name: "EASY",
+                rows: 4,        // Fewer starting bubbles
+                ammo: 50,       // More shots
+                colorCount: 4,  // Fewer colors (easier matching)
+                deadLineFactor: 1.8 // Safer deadline (further from shooter)
+            },
+            MEDIUM: {
+                name: "MEDIUM",
+                rows: 5,
+                ammo: 30,
+                colorCount: 6,
+                deadLineFactor: 1.5 // Standard deadline
+            },
+            HARD: {
+                name: "HARD",
+                rows: 6,
+                ammo: 20,
+                colorCount: 7,  // All colors (harder matching)
+                deadLineFactor: 1.3 // Tighter deadline (closer to shooter)
+            }
+        };
+        const LEVEL_KEYS = Object.keys(LEVEL_CONFIGS);
+        
+        // --- Game Constants ---
+        const CANVAS_WIDTH = 480;
+        const CANVAS_HEIGHT = 600;
+        const BALL_RADIUS = 20; // Increased radius for better touch targets
+        const BALL_DIAMETER = BALL_RADIUS * 2;
+        const ROW_HEIGHT = Math.sqrt(3) * BALL_RADIUS; // Hexagonal grid height
+        const BALL_SPEED = 12; // Slightly faster speed
+        const GRID_COLS = 12;
+        
+        // Dynamic constants initialized in resetGame:
+        let DEAD_LINE_Y; 
+
+        // VIBRANT COLORS (Mobile App Palette)
+        const COLORS = [
+            '#ff3b30', // Red
+            '#ff9500', // Orange
+            '#ffcc00', // Yellow
+            '#34c759', // Green
+            '#007aff', // Blue
+            '#af52de', // Purple
+            '#00c9a7'  // Cyan (New addition for variety)
+        ];
+
+        // --- State Variables ---
+        let canvas, ctx;
+        let nextBubbleCanvas, nextBubbleCtx;
+        let bubbles = [];      
+        let shooterBubble = null; 
+        let nextBubble = null;
+        let movingBubble = null;  
+        let score = 0;
+        let ammo = 0; // Initialized by level config
+        let currentLevelKey = 'MEDIUM'; // Start on medium (New)
+        let mouseX = CANVAS_WIDTH / 2;
+        let mouseY = 0;
+        let gameOver = false;
+        let shooterX = CANVAS_WIDTH / 2;
+        let shooterY = CANVAS_HEIGHT - BALL_RADIUS * 2;
+        let animationFrameId = null; 
+        let gameTime = 0; // Time counter for animation effects
+
+
+        // --- UI Elements ---
+        const scoreDisplay = document.getElementById('scoreValue');
+        const ammoDisplay = document.getElementById('ammoValue');
+        const messageOverlay = document.getElementById('messageOverlay');
+        const messageTitle = document.getElementById('messageTitle');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const levelDisplay = document.getElementById('currentLevelDisplay'); // New
+
+
+        // --- Bubble Class (Same) ---
+        class Bubble {
+            constructor(x, y, color, isGrid = false) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.colorIndex = COLORS.indexOf(color);
+                this.radius = BALL_RADIUS;
+                this.vx = 0;
+                this.vy = 0;
+                this.isGrid = isGrid;
+                this.markedForDeletion = false;
+            }
+
+            draw(context) {
+                if (this.markedForDeletion) return;
+                
+                context.beginPath();
+                context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+
+                // Radial gradient for 3D look (Improved animation/visuals)
+                const gradient = context.createRadialGradient(
+                    this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.1,
+                    this.x, this.y, this.radius
+                );
+                // Center Highlight
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.7)'); 
+                // Base Color Transition
+                gradient.addColorStop(0.2, this.color); 
+                // Edge Shadow
+                gradient.addColorStop(1, this.color + 'd0'); 
+
+                context.fillStyle = gradient;
+                context.fill();
+                context.closePath();
+                
+                // White highlight for shine
+                context.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                context.beginPath();
+                context.arc(this.x - this.radius * 0.4, this.y - this.radius * 0.4, this.radius * 0.2, 0, Math.PI * 2);
+                context.fill();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Wall collision (bouncing off the side walls)
+                if (this.x - this.radius < 0 || this.x + this.radius > CANVAS_WIDTH) {
+                    this.vx = -this.vx;
+                    // Clamp position to avoid getting stuck
+                    if (this.x - this.radius < 0) this.x = this.radius;
+                    if (this.x + this.radius > CANVAS_WIDTH) this.x = CANVAS_WIDTH - this.radius;
+                }
+            }
+        }
+
+
+        // --- Utility Functions ---
+
+        /** Gets a random color from the COLORS array, constrained by the current level. */
+        function getRandomColor() {
+            const config = LEVEL_CONFIGS[currentLevelKey];
+            // Limit the palette based on the level's color count
+            const availableColorPalette = COLORS.slice(0, config.colorCount); 
+
+            // Check for available colors on the grid to ensure solvability
+            const availableColorsOnGrid = getAvailableColorsOnGrid(availableColorPalette);
+            if (availableColorsOnGrid.length === 0) {
+                 // Fallback to random color from limited palette if grid is empty
+                 return availableColorPalette[Math.floor(Math.random() * availableColorPalette.length)];
+            }
+            // Only generate colors currently present on the grid to ensure matches are possible
+            return availableColorsOnGrid[Math.floor(Math.random() * availableColorsOnGrid.length)];
+        }
+
+        /** Checks which colors are currently on the grid, constrained by a given palette. */
+        function getAvailableColorsOnGrid(palette = COLORS) {
+            const colors = new Set();
+            bubbles.filter(b => b.isGrid).forEach(b => {
+                if (palette.includes(b.color)) {
+                    colors.add(b.color);
+                }
+            });
+            // Returns an array of hex colors
+            return Array.from(colors); 
+        }
+
+        /** Calculates the closest grid position (x, y) for a bubble at (px, py). (Same) */
+        function getClosestGridCenter(px, py) {
+            let bestX = -1, bestY = -1;
+            let minDistanceSq = Infinity;
+
+            // Check top border
+            if (py < ROW_HEIGHT) {
+                return { x: px, y: BALL_RADIUS };
+            }
+
+            // Check neighbors of all existing grid bubbles (better snapping logic)
+            bubbles.filter(b => b.isGrid).forEach(gridB => {
+                // Check 6 potential surrounding attachment points
+                for (let i = 0; i < 6; i++) {
+                    const angle = Math.PI / 3 * i + (Math.PI / 6); // Angles for a perfect hex shape
+                    const checkX = gridB.x + BALL_DIAMETER * Math.cos(angle);
+                    const checkY = gridB.y + BALL_DIAMETER * Math.sin(angle);
+
+                    const dx = px - checkX;
+                    const dy = py - checkY;
+                    const distanceSq = dx * dx + dy * dy;
+
+                    if (distanceSq < minDistanceSq) {
+                        minDistanceSq = distanceSq;
+                        bestX = checkX;
+                        bestY = checkY;
+                    }
+                }
+            });
+            
+            // If we found a point close enough (within a half radius tolerance of an ideal spot)
+            if (minDistanceSq < BALL_RADIUS * BALL_RADIUS) {
+                 return { x: bestX, y: bestY };
+            }
+            
+            return null;
+        }
+
+        // --- Game Setup and Control ---
+
+        /** Initializes the grid based on the current level configuration. (Updated) */
+        function initializeGrid() {
+            bubbles = []; 
+            const config = LEVEL_CONFIGS[currentLevelKey];
+            const filledRows = config.rows; 
+            const levelColors = COLORS.slice(0, config.colorCount); // Use limited color set
+
+            for (let row = 0; row < filledRows; row++) {
+                const xOffset = (row % 2 === 1) ? BALL_RADIUS : 0;
+                const cols = (row % 2 === 1) ? GRID_COLS - 1 : GRID_COLS;
+
+                for (let col = 0; col < cols; col++) {
+                    const x = xOffset + col * BALL_DIAMETER + BALL_RADIUS;
+                    const y = row * ROW_HEIGHT + BALL_RADIUS;
+                    
+                    if (Math.random() > 0.1) { // 90% fill rate for starting
+                        // Use the level's limited color palette
+                        bubbles.push(new Bubble(x, y, levelColors[Math.floor(Math.random() * levelColors.length)], true)); 
+                    }
+                }
+            }
+        }
+
+        function spawnBubbles() {
+            // Spawn current bubble
+            shooterBubble = new Bubble(shooterX, shooterY, getRandomColor(), false);
+            
+            // Spawn next bubble
+            nextBubble = new Bubble(0, 0, getRandomColor(), false);
+        }
+
+        function initGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+
+            nextBubbleCanvas = document.getElementById('nextBubbleCanvas');
+            nextBubbleCtx = nextBubbleCanvas.getContext('2d');
+            
+            // UI Button Handlers
+            document.getElementById('restartButton').addEventListener('click', resetGame);
+            document.getElementById('playAgainButton').addEventListener('click', resetGame);
+            document.getElementById('swapButton').addEventListener('click', swapBubbles);
+            document.getElementById('levelButton').addEventListener('click', cycleLevel); // New Level Handler
+
+            // Game Input Handlers
+            canvas.addEventListener('mousemove', handleAim);
+            canvas.addEventListener('click', handleShoot);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchstart', handleTouchMove); // Aim on touch start/move
+            canvas.addEventListener('touchend', handleShoot); // Shoot on touch end
+            
+            resetGame();
+        }
+
+        /** Cycles through the difficulty levels and resets the game. (New) */
+        function cycleLevel() {
+            if (movingBubble || gameOver) return;
+
+            const currentIndex = LEVEL_KEYS.indexOf(currentLevelKey);
+            const nextIndex = (currentIndex + 1) % LEVEL_KEYS.length;
+            currentLevelKey = LEVEL_KEYS[nextIndex];
+
+            // Auto-restart game with new level settings
+            resetGame(); 
+        }
+
+        /** Resets the game state based on the current level configuration. (Updated) */
+        function resetGame() {
+            const config = LEVEL_CONFIGS[currentLevelKey];
+            
+            // Update dynamic constant: Game Over line position
+            DEAD_LINE_Y = CANVAS_HEIGHT - BALL_DIAMETER * config.deadLineFactor;
+
+            gameOver = false;
+            score = 0;
+            ammo = config.ammo; // Use level-specific ammo
+            movingBubble = null;
+            gameTime = 0; // Reset game time
+            
+            scoreDisplay.textContent = score;
+            ammoDisplay.textContent = ammo;
+            levelDisplay.textContent = config.name; // Update level name display
+            messageOverlay.classList.add('hidden');
+            
+            initializeGrid();
+            spawnBubbles();
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            gameLoop();
+        }
+
+        /** Swaps the current shooter bubble with the next bubble in the queue. (Same) */
+        function swapBubbles() {
+            if (movingBubble || gameOver) return;
+            
+            // Swap the color properties (which is all that matters for new bubbles)
+            const tempColor = shooterBubble.color;
+            const tempColorIndex = shooterBubble.colorIndex;
+            
+            shooterBubble.color = nextBubble.color;
+            shooterBubble.colorIndex = nextBubble.colorIndex;
+            
+            nextBubble.color = tempColor;
+            nextBubble.colorIndex = tempColorIndex;
+            
+            // Redraw next bubble immediately
+            drawNextBubble();
+        }
+
+        // --- Drawing Functions (Same) ---
+
+        /** Draws the visual line/arc for the shooter area (for better alignment). */
+        function drawShooterArea() {
+            ctx.save();
+            // Draw a semi-circle line where the shooter bubble sits (as a visual guide)
+            ctx.strokeStyle = '#af52de'; // Purple guide line
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            
+            ctx.beginPath();
+            // Arc covers the bottom half, centered at the shooter position
+            ctx.arc(shooterX, shooterY, BALL_RADIUS * 1.5, Math.PI * 0.8, Math.PI * 0.2, true); 
+            ctx.stroke();
+            ctx.restore();
+            
+            // Draw the Shooter Base (Cannon is now obsolete, but keeping a small base)
+            ctx.fillStyle = '#00c9a7';
+            ctx.fillRect(shooterX - 30, shooterY + BALL_RADIUS, 60, 5);
+        }
+        
+        function drawDeadLine() {
+            ctx.save();
+            ctx.strokeStyle = '#ff3b30'; // Vibrant Red Warning Line
+            ctx.setLineDash([10, 10]);
+            ctx.lineWidth = 3;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, DEAD_LINE_Y);
+            ctx.lineTo(CANVAS_WIDTH, DEAD_LINE_Y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        /** Draws the aiming guide line, including wall bounces. */
+        function drawGuideLine() {
+            if (movingBubble || gameOver) return;
+
+            const angle = Math.atan2(mouseY - shooterY, mouseX - shooterX);
+            
+            // Clamp the angle to the upper half (between ~5 degrees and ~175 degrees)
+            const minAngle = Math.PI * 0.05;
+            const maxAngle = Math.PI * 0.95;
+
+            // If pointing down (Y > shooterY), clamp it
+            let actualAngle = angle;
+            if (mouseY > shooterY) {
+                actualAngle = (mouseX < shooterX) ? maxAngle : minAngle;
+            }
+
+            let startX = shooterX;
+            let startY = shooterY;
+            let velX = Math.cos(actualAngle) * BALL_SPEED;
+            let velY = Math.sin(actualAngle) * BALL_SPEED;
+            let bounces = 0;
+            const maxBounces = 2; // Limit simulation to 2 bounces for visual clarity
+
+            ctx.save();
+            ctx.strokeStyle = '#ffcc00'; // Vibrant Yellow guide line
+            ctx.setLineDash([8, 10]);
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+
+            // Simulation loop
+            for (let i = 0; i < 400; i++) {
+                let nextX = startX + velX;
+                let nextY = startY + velY;
+                let hitTarget = false;
+
+                // 1. Check for Wall Collision (Bounce)
+                if ((nextX - BALL_RADIUS < 0 || nextX + BALL_RADIUS > CANVAS_WIDTH) && bounces < maxBounces) {
+                    let bounceX = (nextX - BALL_RADIUS < 0) ? BALL_RADIUS : CANVAS_WIDTH - BALL_RADIUS;
+                    
+                    // Calculate where the line should intersect the wall
+                    let ratio = (bounceX - startX) / velX;
+                    let bounceY = startY + velY * ratio;
+
+                    ctx.lineTo(bounceX, bounceY);
+                    
+                    // Reflect velocity and continue from bounce point
+                    velX *= -1;
+                    bounces++;
+                    startX = bounceX;
+                    startY = bounceY;
+                    ctx.moveTo(startX, startY);
+                    continue;
+                } else if (bounces >= maxBounces && (nextX - BALL_RADIUS < 0 || nextX + BALL_RADIUS > CANVAS_WIDTH)) {
+                    // Stop if max bounces exceeded
+                    ctx.lineTo(nextX, nextY);
+                    break; 
+                }
+                
+                // 2. Check for Top Collision (Stop)
+                if (nextY - BALL_RADIUS < 0) {
+                    ctx.lineTo(nextX, BALL_RADIUS);
+                    hitTarget = true;
+                }
+
+                // 3. Check for Grid Bubble Collision (Stop)
+                for (const bubble of bubbles.filter(b => b.isGrid)) {
+                    const distance = Math.hypot(nextX - bubble.x, nextY - bubble.y);
+                    if (distance < BALL_DIAMETER * 0.9) { 
+                        ctx.lineTo(nextX, nextY);
+                        hitTarget = true;
+                        break;
+                    }
+                }
+                
+                if (hitTarget) break;
+
+                // If no collision, advance position
+                startX = nextX;
+                startY = nextY;
+            }
+
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawNextBubble() {
+            nextBubbleCtx.clearRect(0, 0, nextBubbleCanvas.width, nextBubbleCanvas.height);
+            if (nextBubble) {
+                // To make the preview proportional to the 28x28 canvas size
+                const PREVIEW_BUBBLE_RADIUS = 12; 
+                const canvasSize = nextBubbleCanvas.width;
+
+                const oldRadius = nextBubble.radius;
+                const oldX = nextBubble.x;
+                const oldY = nextBubble.y;
+
+                // Temporarily set properties for drawing in the small canvas
+                nextBubble.radius = PREVIEW_BUBBLE_RADIUS;
+                nextBubble.x = canvasSize / 2;
+                nextBubble.y = canvasSize / 2;
+                
+                nextBubble.draw(nextBubbleCtx);
+                
+                // Restore original properties
+                nextBubble.radius = oldRadius;
+                nextBubble.x = oldX;
+                nextBubble.y = oldY;
+            }
+        }
+
+        // --- Input Handlers (Same) ---
+
+        function getPointerPos(event) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+
+            if (event.touches && event.touches.length > 0) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            return { x, y };
+        }
+
+        function handleAim(event) {
+            if (movingBubble || gameOver) return;
+            const pos = getPointerPos(event);
+            
+            // Only allow aiming above the shooter
+            if (pos.y < shooterY) {
+                mouseX = pos.x;
+                mouseY = pos.y;
+            }
+        }
+
+        function handleTouchMove(event) {
+            event.preventDefault(); // Prevent scrolling
+            handleAim(event);
+        }
+
+        function handleShoot(event) {
+            if (movingBubble || gameOver || ammo <= 0) return;
+            
+            // Get position for accurate angle calculation
+            const pos = getPointerPos(event);
+            if (pos.y > shooterY) return; // Ignore shots pointing downwards
+
+            // 1. Calculate the angle and clamp it (same logic as drawGuideLine)
+            const dx = mouseX - shooterX;
+            const dy = mouseY - shooterY;
+            let angle = Math.atan2(dy, dx);
+
+            const minAngle = Math.PI * 0.05;
+            const maxAngle = Math.PI * 0.95;
+
+            if (mouseY > shooterY) {
+                angle = (mouseX < shooterX) ? maxAngle : minAngle;
+            }
+
+            // 2. Assign to the moving bubble and give it velocity
+            movingBubble = shooterBubble;
+            movingBubble.vx = BALL_SPEED * Math.cos(angle);
+            movingBubble.vy = BALL_SPEED * Math.sin(angle);
+
+            // 3. Update ammo and prepare next shooter bubble
+            ammo--;
+            ammoDisplay.textContent = ammo;
+            
+            // Swap next bubble to shooter, and spawn a new 'next'
+            shooterBubble = nextBubble;
+            shooterBubble.x = shooterX;
+            shooterBubble.y = shooterY;
+
+            // This ensures the color changes after every shot
+            nextBubble = new Bubble(0, 0, getRandomColor(), false); 
+        }
+
+        // --- Game Logic (Same) ---
+
+        function updateBubbleMovement() {
+            if (!movingBubble) return;
+
+            movingBubble.update();
+
+            // Check for collision with top wall
+            if (movingBubble.y - movingBubble.radius < 0) {
+                movingBubble.y = movingBubble.radius;
+                snapBubble(movingBubble);
+                return;
+            }
+
+            // Check for collision with existing grid bubbles
+            for (let i = 0; i < bubbles.length; i++) {
+                const gridBubble = bubbles[i];
+                if (!gridBubble.isGrid || gridBubble === movingBubble) continue;
+
+                const distance = Math.hypot(movingBubble.x - gridBubble.x, movingBubble.y - gridBubble.y);
+
+                if (distance < BALL_DIAMETER * 0.9) { 
+                    snapBubble(movingBubble);
+                    return;
+                }
+            }
+        }
+
+        function snapBubble(bubble) {
+            // Find the ideal attachment spot
+            const snapPos = getClosestGridCenter(bubble.x, bubble.y);
+
+            if (snapPos) {
+                // Attach the bubble
+                bubble.x = snapPos.x;
+                bubble.y = snapPos.y;
+            } else {
+                // Default to simple center snap if closest grid center fails (e.g., first row)
+                if (bubble.y < BALL_DIAMETER) {
+                    bubble.y = BALL_RADIUS;
+                }
+            }
+
+            bubble.isGrid = true;
+            bubble.vx = 0;
+            bubble.vy = 0;
+            
+            // Add to the main bubble array if not already there (only needed if we filter it out earlier, but safer to check)
+            if (!bubbles.includes(bubble)) {
+                 bubbles.push(bubble);
+            }
+
+            // Start the color match check process
+            findAndRemoveMatches(bubble);
+
+            // Reset the moving bubble state
+            movingBubble = null;
+            checkGameOver();
+        }
+
+        /** Finds bubbles of the same color connected to the hit bubble using BFS/DFS. */
+        function findAndRemoveMatches(startBubble) {
+            const matches = [startBubble];
+            const queue = [startBubble];
+            const visited = new Set();
+            visited.add(startBubble);
+
+            const targetColor = startBubble.color;
+
+            // BFS/DFS loop
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                // Check all other grid bubbles as neighbors
+                bubbles.filter(b => b.isGrid && b !== current).forEach(neighbor => {
+                    const distance = Math.hypot(current.x - neighbor.x, current.y - neighbor.y);
+
+                    if (distance < BALL_DIAMETER * 1.1) { // Check if close enough to be a neighbor
+                        if (neighbor.color === targetColor && !visited.has(neighbor)) {
+                            visited.add(neighbor);
+                            matches.push(neighbor);
+                            queue.push(neighbor);
+                        }
+                    }
+                });
+            }
+
+            // If 3 or more matches are found, remove them
+            if (matches.length >= 3) {
+                score += matches.length * 10;
+                scoreDisplay.textContent = score;
+
+                matches.forEach(m => m.markedForDeletion = true);
+                
+                // Remove matched bubbles immediately from the active grid
+                bubbles = bubbles.filter(b => !b.markedForDeletion);
+                
+                // Then, check for floating islands
+                checkFloatingBubbles();
+            }
+        }
+
+        /** Checks for and drops any bubbles that are no longer connected to the top row. */
+        function checkFloatingBubbles() {
+            if (bubbles.length === 0) return; // Nothing left to check
+
+            const connectedBubbles = new Set();
+            const topBubbles = bubbles.filter(b => b.isGrid && b.y - b.radius < BALL_DIAMETER); // Bubbles near the top
+
+            const queue = [...topBubbles];
+            topBubbles.forEach(b => connectedBubbles.add(b));
+
+            // BFS to find all connected bubbles
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                bubbles.filter(b => b.isGrid && b !== current).forEach(neighbor => {
+                    const distance = Math.hypot(current.x - neighbor.x, current.y - neighbor.y);
+                    if (distance < BALL_DIAMETER * 1.1 && !connectedBubbles.has(neighbor)) {
+                        connectedBubbles.add(neighbor);
+                        queue.push(neighbor);
+                    }
+                });
+            }
+
+            // Identify and drop disconnected bubbles
+            const floating = [];
+            bubbles.forEach(b => {
+                if (b.isGrid && !connectedBubbles.has(b)) {
+                    b.isGrid = false; 
+                    b.markedForDeletion = true; // Mark to be removed when off-screen
+                    b.vy = 5 + Math.random() * 5; // Start falling
+                    b.vx = (Math.random() - 0.5) * 2; 
+                    score += 50; // Big bonus for drops
+                    floating.push(b);
+                }
+            });
+
+            if (floating.length > 0) {
+                 scoreDisplay.textContent = score;
+            }
+        }
+
+        function checkGameOver() {
+            if (bubbles.length === 0) {
+                endGame("YOU WIN!", '#34c759');
+                return;
+            }
+
+            for (const bubble of bubbles.filter(b => b.isGrid)) {
+                if (bubble.y + bubble.radius > DEAD_LINE_Y) {
+                    endGame("GAME OVER", '#ff3b30');
+                    return;
+                }
+            }
+            
+            if (ammo <= 0 && !movingBubble) {
+                 endGame("OUT OF AMMO", '#ff9500');
+            }
+        }
+
+        function endGame(title, color) {
+            gameOver = true;
+            cancelAnimationFrame(animationFrameId);
+            
+            messageTitle.textContent = title;
+            messageTitle.style.color = color;
+            messageTitle.classList.replace('text-[#ff3b30]', 'text-[' + color + ']');
+            
+            finalScoreDisplay.textContent = score;
+            messageOverlay.classList.remove('hidden');
+        }
+
+
+        // --- Game Loop ---
+
+        function gameLoop() {
+            if (gameOver) {
+                return;
+            }
+            
+            // 1. Clear Canvas
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // 2. Update Logic
+            updateBubbleMovement();
+            gameTime++; // Increment game time for animations
+
+            // 3. Draw Elements
+            drawDeadLine();
+
+            // Draw grid and falling bubbles
+            bubbles.forEach(bubble => bubble.draw(ctx));
+
+            // Draw moving bubble
+            if (movingBubble) {
+                movingBubble.draw(ctx);
+            }
+
+            // Draw Aim Line and Shooter Area
+            drawGuideLine();
+            drawShooterArea(); // Use the new visual guide
+
+            
+            // Draw shooter bubble (on top of cannon)
+            if (shooterBubble) {
+                // Add a pulse/glow effect (Animation)
+                if (!movingBubble) {
+                    ctx.save();
+                    const pulse = Math.sin(gameTime / 10) * 3 + 4; // 1-7 radius pulsing
+                    ctx.shadowBlur = pulse;
+                    ctx.shadowColor = shooterBubble.color;
+                }
+                
+                shooterBubble.draw(ctx);
+                
+                if (!movingBubble) {
+                    ctx.restore();
+                }
+            }
+            
+            // Update and draw next bubble preview
+            drawNextBubble();
+
+            // 4. Clean up off-screen falling bubbles
+            bubbles = bubbles.filter(b => !b.markedForDeletion || b.y < CANVAS_HEIGHT + BALL_RADIUS);
+
+
+            // 5. Request next frame
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize the game when the window loads
+        window.onload = initGame;
+    </script>
+</body>
+</html>

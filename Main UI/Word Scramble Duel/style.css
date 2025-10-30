@@ -1,0 +1,212 @@
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #ffc107;
+    --background-color: #f4f7f6;
+    --text-color: #333;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- Header & Footer --- */
+.game-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#timer {
+    font-size: 1.2em;
+    font-weight: bold;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.game-footer {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    margin-top: auto;
+}
+
+/* --- Game Container - CORE RESPONSIVENESS --- */
+.game-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    display: grid;
+    gap: 20px;
+    width: calc(100% - 40px); /* Padding compensation */
+}
+
+/* Default Mobile Layout (Single Column Stack) */
+.game-container {
+    grid-template-areas: 
+        "scramble"
+        "score"
+        "input"
+        "start";
+}
+
+/* Tablet and Desktop Layout (Min-width 600px) */
+@media (min-width: 600px) {
+    .game-container {
+        grid-template-areas: 
+            "scramble score"
+            "input input"
+            "start start";
+        grid-template-columns: 1fr 1fr; /* Two equal columns for scramble/score */
+    }
+}
+
+.scramble-section { text-align: center; }
+
+/* --- Letters Display --- */
+.letters-display {
+    font-size: 2.5em; /* Adjusted for mobile */
+    font-weight: bold;
+    letter-spacing: 8px;
+    padding: 15px;
+    border: 3px dashed var(--secondary-color);
+    border-radius: 8px;
+    background-color: #fff9e6;
+    transition: transform 0.5s ease-out;
+}
+@media (min-width: 600px) {
+    .letters-display { font-size: 3em; letter-spacing: 10px; }
+}
+
+/* --- Input & Button Styling --- */
+.input-section {
+    display: flex;
+    align-items: stretch;
+}
+
+#word-input {
+    flex-grow: 1; /* Takes up available space */
+    padding: 10px;
+    font-size: 1.2em;
+    border: 2px solid #ccc;
+    border-radius: 5px 0 0 5px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+#submit-word {
+    padding: 10px 15px;
+    font-size: 1.2em;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 0 5px 5px 0;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+#submit-word:hover:not([disabled]) {
+    background-color: #0056b3;
+}
+
+#submit-word:active:not([disabled]) {
+    transform: scale(0.98);
+}
+
+/* --- Messages --- */
+.message-area {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    opacity: 0; 
+    transition: opacity 0.3s, background-color 0.3s;
+    height: 0;
+    overflow: hidden;
+}
+
+.message-success, .message-error {
+    opacity: 1;
+    height: auto;
+}
+
+.message-success { background-color: #d4edda; color: var(--success-color); }
+.message-error { background-color: #f8d7da; color: var(--error-color); }
+
+/* --- Score and List --- */
+#found-words-list {
+    list-style: none;
+    padding: 0 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+
+#found-words-list li {
+    padding: 5px 0;
+    border-bottom: 1px dotted #eee;
+    transition: background-color 0.5s;
+}
+
+/* --- Start Button --- */
+.start-button {
+    padding: 15px 30px;
+    font-size: 1.5em;
+    font-weight: bold;
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+/* --- Game State Classes (Animation & Logic Visibility) --- */
+
+.game-not-active .scramble-section,
+.game-not-active .score-section,
+.game-not-active .input-section {
+    opacity: 0.5;
+    /* Use pointer-events to fully disable sections */
+    pointer-events: none; 
+}
+
+.game-active #start-game {
+    display: none;
+}
+
+.game-over #timer {
+    color: var(--error-color);
+    /* Fully animated pulse */
+    animation: pulse-red 1s infinite alternate; 
+}
+
+@keyframes pulse-red {
+    from { color: var(--error-color); transform: scale(1); }
+    to { color: #8b0000; transform: scale(1.1); }
+}
+
+.highlight-found {
+    /* Animation for successfully found words */
+    animation: word-found 0.5s ease-out;
+}
+
+@keyframes word-found {
+    0% { background-color: var(--secondary-color); transform: scale(1.02); }
+    100% { background-color: transparent; transform: scale(1); }
+}

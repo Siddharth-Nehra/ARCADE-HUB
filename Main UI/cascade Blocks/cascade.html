@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Blocks Puzzle</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom CSS for a retro, dark aesthetic */
+        body {
+            background-color: #1a1a2e; /* Dark theme background */
+        }
+        #game-container {
+            background-color: #2c2c54; /* Game area background */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+        canvas {
+            border: 4px solid #4a4a75;
+            display: block;
+            background-color: #131327; /* Darker background for the playing area */
+            touch-action: none; /* Disable default touch actions */
+        }
+        /* Style for control buttons */
+        .control-button {
+            padding: 0.75rem 1.5rem;
+            font-weight: 700;
+            border-radius: 0.5rem;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 4px 0 0 #4a4a75;
+            transform: translateY(0);
+        }
+        .control-button:active {
+            box-shadow: 0 1px 0 0 #4a4a75;
+            transform: translateY(3px);
+        }
+        /* Custom animation for the footer text */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center justify-center min-h-screen text-white">
+
+    <!-- NEW MAIN HEADER -->
+    <header class="mb-8 text-center w-full">
+        <h1 class="text-6xl md:text-7xl font-black text-pink-400 tracking-widest uppercase" style="text-shadow: 0 0 15px rgba(255, 105, 180, 0.8), 0 0 5px rgba(255, 105, 180, 0.4);">
+            Block Drop
+        </h1>
+        <p class="text-lg text-indigo-300 mt-2 font-medium">A Classic Arcade Challenge</p>
+    </header>
+
+    <div id="game-container" class="rounded-xl p-6 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Stats Panel (Position 2 on mobile, 1 on desktop) -->
+        <div class="w-full lg:w-56 flex-shrink-0 order-2 lg:order-1">
+            <div class="p-4 rounded-lg bg-indigo-700/50 backdrop-blur-sm space-y-4">
+                <!-- Removed duplicate header from here -->
+                <div class="text-lg font-bold">
+                    <p class="mb-2">Score: <span id="score" class="text-yellow-300">0</span></p>
+                    <p class="mb-2">Lines: <span id="lines" class="text-yellow-300">0</span></p>
+                    <p class="mb-2">Level: <span id="level" class="text-yellow-300">1</span></p>
+                </div>
+                
+                <div class="border-t border-white/20 pt-4">
+                    <h2 class="text-xl font-bold mb-2 text-white">Next</h2>
+                    <canvas id="next-canvas" width="120" height="120" class="bg-indigo-900/50 rounded-md"></canvas>
+                </div>
+
+                <!-- NEW: Keyboard Controls for Desktop/Clarity -->
+                <div class="border-t border-white/20 pt-4 mt-4">
+                    <h2 class="text-xl font-bold mb-2 text-white">Controls</h2>
+                    <ul class="text-sm space-y-1 text-gray-200">
+                        <li>**◀ / ▶**: Move Left / Right</li>
+                        <li>**▲ (Up)**: Rotate Piece</li>
+                        <li>**▼ (Down)**: Soft Drop</li>
+                        <li>**Space**: Hard Drop (Instant)</li>
+                        <li>**Enter**: Start / Pause</li>
+                    </ul>
+                </div>
+                <!-- END NEW -->
+
+                <div id="game-message" class="text-center p-2 rounded-md bg-yellow-500/80 text-gray-900 font-bold hidden">
+                    <!-- Game messages will appear here -->
+                </div>
+                
+                <button id="start-button" class="w-full bg-green-500 hover:bg-green-400 text-white control-button">
+                    Start Game (or Pause)
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Column: Canvas and Controls (Position 1 on mobile, 2 on desktop) -->
+        <div class="order-1 lg:order-2 flex flex-col justify-center items-center gap-4">
+            <!-- Game Canvas -->
+            <div class="flex justify-center items-center">
+                <canvas id="game-canvas" width="300" height="600"></canvas>
+            </div>
+
+            <!-- Mobile Controls (Now correctly positioned below canvas on all screen sizes) -->
+            <div id="mobile-controls" class="w-full max-w-[300px] flex justify-center gap-2">
+                <button id="btn-left" class="bg-purple-500 hover:bg-purple-400 text-white control-button text-xl">◀</button>
+                <button id="btn-rotate" class="bg-pink-500 hover:bg-pink-400 text-white control-button text-xl">↻</button>
+                <button id="btn-down" class="bg-purple-500 hover:bg-purple-400 text-white control-button text-xl">▼</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW FOOTER -->
+    <footer class="mt-8 text-center text-gray-400/80 p-4 w-full max-w-4xl rounded-lg">
+        <p class="text-lg text-pink-300 font-semibold animate-pulse-slow">
+            Game On! Keep stacking and clearing those lines.
+        </p>
+        <p class="mt-1 text-xs">Developed in Canvas Environment | Retro Block Challenge</p>
+    </footer>
+
+    <script>
+        // --- GAME CONSTANTS ---
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30; // 300 / 10 = 30px per block
+        const BASE_DROP_RATE = 1000; // milliseconds
+        
+        // Score levels
+        const SCORE_PER_LINE = [0, 40, 100, 300, 1200]; 
+        const LINES_PER_LEVEL = 10;
+
+        // Tetromino shapes (Y, I, O, L, J, S, Z)
+        // [name, color, shape]
+        const TETROMINOS = [
+            // I (Cyan)
+            { color: '#00ffff', shape: [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]] },
+            // J (Blue)
+            { color: '#0000ff', shape: [[1, 0, 0], [1, 1, 1], [0, 0, 0]] },
+            // L (Orange)
+            { color: '#ffa500', shape: [[0, 0, 1], [1, 1, 1], [0, 0, 0]] },
+            // O (Yellow)
+            { color: '#ffff00', shape: [[1, 1], [1, 1]] },
+            // S (Green)
+            { color: '#00ff00', shape: [[0, 1, 1], [1, 1, 0], [0, 0, 0]] },
+            // T (Purple)
+            { color: '#800080', shape: [[0, 1, 0], [1, 1, 1], [0, 0, 0]] },
+            // Z (Red)
+            { color: '#ff0000', shape: [[1, 1, 0], [0, 1, 1], [0, 0, 0]] }
+        ];
+
+        // --- GAME STATE VARIABLES ---
+        let canvas, ctx;
+        let nextCanvas, nextCtx;
+        let board;
+        let currentPiece;
+        let nextPiece;
+        let score = 0;
+        let lines = 0;
+        let level = 1;
+        let isPaused = true;
+        let lastTime = 0;
+        let dropCounter = 0;
+        let dropInterval = BASE_DROP_RATE;
+
+        // --- HTML ELEMENTS ---
+        const scoreEl = document.getElementById('score');
+        const linesEl = document.getElementById('lines');
+        const levelEl = document.getElementById('level');
+        const startButton = document.getElementById('start-button');
+        const messageBox = document.getElementById('game-message');
+
+        // --- UTILITY FUNCTIONS ---
+
+        /**
+         * Creates an empty game board (grid).
+         * @returns {Array<Array<string>>} 2D array representing the board.
+         */
+        function createBoard() {
+            return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        }
+
+        /**
+         * Gets a random new piece (Tetromino).
+         */
+        function getNewPiece() {
+            const randomIndex = Math.floor(Math.random() * TETROMINOS.length);
+            const piece = TETROMINOS[randomIndex];
+            
+            // Start position in the center top
+            return {
+                matrix: piece.shape,
+                color: piece.color,
+                x: Math.floor(COLS / 2) - Math.floor(piece.shape[0].length / 2),
+                y: 0
+            };
+        }
+
+        /**
+         * Spawns a new piece, moving the 'next' piece to 'current'.
+         */
+        function spawnPiece() {
+            currentPiece = nextPiece;
+            nextPiece = getNewPiece();
+            
+            // If the starting position is invalid, the game is over
+            if (!isValidMove(0, 0, currentPiece.matrix)) {
+                gameOver();
+            }
+        }
+
+        /**
+         * Rotates the given matrix clockwise.
+         * @param {Array<Array<number>>} matrix - The shape matrix of the piece.
+         * @returns {Array<Array<number>>} The rotated matrix.
+         */
+        function rotateMatrix(matrix) {
+            const N = matrix.length - 1;
+            // Use map to create a new rotated matrix
+            const result = matrix.map((row, i) =>
+                row.map((val, j) => matrix[N - j][i])
+            );
+            return result;
+        }
+
+        // --- GAME LOGIC ---
+
+        /**
+         * Checks if the current piece can be placed at the new position (nx, ny) with the given matrix.
+         * @param {number} nx - New x position.
+         * @param {number} ny - New y position.
+         * @param {Array<Array<number>>} matrix - The shape matrix to check.
+         * @returns {boolean} True if the move is valid, false otherwise.
+         */
+        function isValidMove(nx, ny, matrix) {
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c]) {
+                        const boardX = currentPiece.x + c + nx;
+                        const boardY = currentPiece.y + r + ny;
+
+                        // Check boundaries
+                        if (boardX < 0 || boardX >= COLS || boardY >= ROWS) {
+                            return false;
+                        }
+                        
+                        // Check collision with locked blocks (ignore top boundary check for piece spawn)
+                        if (boardY >= 0 && board[boardY][boardX] !== 0) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Locks the current piece into the game board.
+         */
+        function lockPiece() {
+            for (let r = 0; r < currentPiece.matrix.length; r++) {
+                for (let c = 0; c < currentPiece.matrix[r].length; c++) {
+                    if (currentPiece.matrix[r][c]) {
+                        const boardX = currentPiece.x + c;
+                        const boardY = currentPiece.y + r;
+                        // Only lock piece if it is within the board bounds
+                        if (boardY >= 0) {
+                            board[boardY][boardX] = currentPiece.color;
+                        }
+                    }
+                }
+            }
+            
+            // Check for and clear lines
+            clearLines();
+            
+            // Spawn the next piece
+            spawnPiece();
+        }
+
+        /**
+         * Clears completed lines and updates score/level.
+         */
+        function clearLines() {
+            let linesCleared = 0;
+            outer: for (let r = ROWS - 1; r >= 0; r--) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] === 0) {
+                        continue outer; // Line is not full
+                    }
+                }
+
+                // Line is full, clear it
+                const rowToClear = board.splice(r, 1)[0].fill(0);
+                board.unshift(rowToClear); // Add an empty row to the top
+                linesCleared++;
+                r++; // Re-check the current row index, which now holds the line above the cleared one
+            }
+
+            if (linesCleared > 0) {
+                // Update score and lines
+                score += SCORE_PER_LINE[linesCleared] * level;
+                lines += linesCleared;
+                
+                // Check for level up
+                const newLevel = 1 + Math.floor(lines / LINES_PER_LEVEL);
+                if (newLevel > level) {
+                    level = newLevel;
+                    // Decrease drop interval (increase difficulty)
+                    dropInterval = BASE_DROP_RATE * Math.pow(0.8, level - 1);
+                    showMessage(`Level UP! Level ${level}`, 'bg-blue-500/80');
+                }
+                
+                updateStats();
+            }
+        }
+        
+        /**
+         * Moves the current piece down by one.
+         */
+        function dropPiece() {
+            if (isValidMove(0, 1, currentPiece.matrix)) {
+                currentPiece.y++;
+            } else {
+                lockPiece();
+            }
+        }
+        
+        /**
+         * Moves the current piece horizontally.
+         * @param {number} dir - -1 for left, 1 for right.
+         */
+        function movePiece(dir) {
+            if (isValidMove(dir, 0, currentPiece.matrix)) {
+                currentPiece.x += dir;
+            }
+        }
+        
+        /**
+         * Rotates the current piece.
+         */
+        function rotatePiece() {
+            const originalMatrix = currentPiece.matrix;
+            const rotatedMatrix = rotateMatrix(originalMatrix);
+            
+            // Simple wall kick mechanism to check adjacent positions if rotation fails
+            const positions = [0, 1, -1, 2, -2]; 
+            for (const offset of positions) {
+                if (isValidMove(offset, 0, rotatedMatrix)) {
+                    currentPiece.x += offset;
+                    currentPiece.matrix = rotatedMatrix;
+                    return;
+                }
+            }
+        }
+        
+        /**
+         * Game over state handler.
+         */
+        function gameOver() {
+            isPaused = true;
+            showMessage('GAME OVER! Press Start to play again.', 'bg-red-500/80');
+        }
+
+
+        // --- RENDERING FUNCTIONS ---
+
+        /**
+         * Draws a single block on the main canvas.
+         * @param {number} x - Column index on the board.
+         * @param {number} y - Row index on the board.
+         * @param {string} color - CSS color string.
+         */
+        function drawBlock(x, y, color) {
+            if (y < 0) return; // Don't draw blocks above the board
+
+            ctx.fillStyle = color;
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            
+            // Add block highlight/shadow for 3D effect
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+
+        /**
+         * Draws the current piece on the main canvas.
+         */
+        function drawPiece() {
+            currentPiece.matrix.forEach((row, r) => {
+                row.forEach((value, c) => {
+                    if (value) {
+                        drawBlock(currentPiece.x + c, currentPiece.y + r, currentPiece.color);
+                    }
+                });
+            });
+        }
+        
+        /**
+         * Draws the entire board state.
+         */
+        function drawBoard() {
+            board.forEach((row, r) => {
+                row.forEach((color, c) => {
+                    if (color !== 0) {
+                        drawBlock(c, r, color);
+                    }
+                });
+            });
+        }
+
+        /**
+         * Draws the 'next' piece in the preview panel.
+         */
+        function drawNextPiece() {
+            nextCtx.fillStyle = '#131327';
+            nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+
+            const matrix = nextPiece.matrix;
+            const color = nextPiece.color;
+            const pieceSize = matrix.length;
+            const startX = (nextCanvas.width / 2) - (pieceSize * BLOCK_SIZE * 0.8 / 2);
+            const startY = (nextCanvas.height / 2) - (pieceSize * BLOCK_SIZE * 0.8 / 2);
+
+            matrix.forEach((row, r) => {
+                row.forEach((value, c) => {
+                    if (value) {
+                        nextCtx.fillStyle = color;
+                        // Use a smaller BLOCK_SIZE for the preview
+                        nextCtx.fillRect(startX + c * (BLOCK_SIZE * 0.8), startY + r * (BLOCK_SIZE * 0.8), (BLOCK_SIZE * 0.8), (BLOCK_SIZE * 0.8));
+                        nextCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                        nextCtx.strokeRect(startX + c * (BLOCK_SIZE * 0.8), startY + r * (BLOCK_SIZE * 0.8), (BLOCK_SIZE * 0.8), (BLOCK_SIZE * 0.8));
+                    }
+                });
+            });
+        }
+
+        /**
+         * Main drawing function. Clears and redraws everything.
+         */
+        function draw() {
+            // Clear the main canvas (set to a dark color matching the play area)
+            ctx.fillStyle = '#131327';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw locked blocks
+            drawBoard();
+            
+            // Draw the falling piece
+            drawPiece();
+            
+            // Draw the next piece preview
+            drawNextPiece();
+        }
+        
+        // --- GAME LOOP ---
+
+        /**
+         * The main loop of the game. Handles piece dropping and frame rendering.
+         * @param {number} [time=0] - The timestamp provided by requestAnimationFrame.
+         */
+        function gameLoop(time = 0) {
+            if (isPaused) return;
+
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                dropPiece();
+                dropCounter = 0;
+            }
+
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // --- GAME CONTROL ---
+
+        /**
+         * Resets the game state and starts the main loop.
+         */
+        function startGame() {
+            // Reset state
+            board = createBoard();
+            score = 0;
+            lines = 0;
+            level = 1;
+            dropInterval = BASE_DROP_RATE;
+            isPaused = false;
+            
+            // Spawn initial pieces
+            nextPiece = getNewPiece();
+            spawnPiece(); 
+
+            updateStats();
+            hideMessage();
+            startButton.textContent = 'Pause Game';
+            
+            // Start the loop
+            gameLoop();
+        }
+        
+        /**
+         * Pauses or resumes the game.
+         */
+        function togglePause() {
+            if (isPaused) {
+                // If paused, start/resume the game (only if board is empty, otherwise resume)
+                if (score === 0 && lines === 0) {
+                    startGame();
+                } else {
+                    isPaused = false;
+                    startButton.textContent = 'Pause Game';
+                    hideMessage();
+                    gameLoop(); // Resume the loop
+                }
+            } else {
+                // Pause the game
+                isPaused = true;
+                startButton.textContent = 'Resume Game';
+                showMessage('Game Paused. Press Resume to continue.', 'bg-yellow-500/80');
+            }
+        }
+
+        /**
+         * Updates score, lines, and level display.
+         */
+        function updateStats() {
+            scoreEl.textContent = score;
+            linesEl.textContent = lines;
+            levelEl.textContent = level;
+        }
+        
+        /**
+         * Shows a temporary game message.
+         */
+        function showMessage(text, classes) {
+            messageBox.textContent = text;
+            messageBox.className = `text-center p-2 rounded-md font-bold ${classes}`;
+            // Removed setTimeout to keep the message visible until a new action happens (e.g., game over, resume)
+        }
+
+        /**
+         * Hides the game message box.
+         */
+        function hideMessage() {
+            messageBox.className = 'text-center p-2 rounded-md hidden font-bold';
+        }
+        
+        // --- EVENT HANDLERS ---
+        
+        /**
+         * Handles player input (keyboard and buttons).
+         * @param {string} action - The action to perform (e.g., 'left', 'right', 'rotate', 'down').
+         */
+        function handleAction(action) {
+            if (isPaused) return;
+
+            switch (action) {
+                case 'left':
+                    movePiece(-1);
+                    break;
+                case 'right':
+                    movePiece(1);
+                    break;
+                case 'down':
+                    // Soft drop
+                    dropPiece();
+                    // Reset drop counter to prevent double drop
+                    dropCounter = 0; 
+                    break;
+                case 'rotate':
+                    rotatePiece();
+                    break;
+                case 'hard_drop':
+                    // Drop instantly until collision
+                    while(isValidMove(0, 1, currentPiece.matrix)) {
+                        currentPiece.y++;
+                    }
+                    lockPiece();
+                    break;
+            }
+            draw();
+        }
+        
+        /**
+         * Initializes canvas contexts and attaches event listeners.
+         */
+        function init() {
+            // Main game canvas
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            
+            // Next piece preview canvas
+            nextCanvas = document.getElementById('next-canvas');
+            nextCtx = nextCanvas.getContext('2d');
+            
+            // Set canvas resolution (important for scaling)
+            canvas.width = COLS * BLOCK_SIZE;
+            canvas.height = ROWS * BLOCK_SIZE;
+            
+            // Keyboard Listener
+            document.addEventListener('keydown', (e) => {
+                if (isPaused && e.key !== ' ' && e.key !== 'Enter') return;
+                
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        handleAction('left');
+                        break;
+                    case 'ArrowRight':
+                        handleAction('right');
+                        break;
+                    case 'ArrowDown':
+                        handleAction('down');
+                        break;
+                    case 'ArrowUp': // Up arrow to rotate
+                        handleAction('rotate');
+                        break;
+                    case ' ': // Space bar for hard drop
+                        e.preventDefault(); // Prevent page scroll
+                        handleAction('hard_drop');
+                        break;
+                    case 'Enter': // Enter key to start/pause
+                        togglePause();
+                        break;
+                }
+            });
+
+            // Button Listeners
+            startButton.addEventListener('click', togglePause);
+            document.getElementById('btn-left')?.addEventListener('click', () => handleAction('left'));
+            document.getElementById('btn-rotate')?.addEventListener('click', () => handleAction('rotate'));
+            document.getElementById('btn-down')?.addEventListener('click', () => handleAction('down'));
+
+            // Initial setup message
+            showMessage('Press Start to begin!', 'bg-yellow-300/80 text-gray-900');
+            
+            // Initialize board and next piece preview
+            board = createBoard();
+            nextPiece = getNewPiece();
+            drawNextPiece();
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = init;
+    </script>
+</body>
+</html>

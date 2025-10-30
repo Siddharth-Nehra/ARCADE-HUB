@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Arcade Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google OAuth -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <script>
+        // Tailwind Configuration for Dark Theme, Custom Colors, and Enhanced Contrast
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-primary': '#0F0F1A', 
+                        'dark-secondary': '#1A1A2E',
+                        'neon-green': '#39FF14', 
+                        'neon-blue': '#4DFFFF',  
+                        'neon-red': '#FF4D6A',   
+                        'white': '#FFFFFF', 
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neon-blue-lg': '0 0 15px rgba(77, 255, 255, 0.7), 0 0 5px rgba(77, 255, 255, 0.9)',
+                        'neon-red-lg': '0 0 15px #FF4D6A, 0 0 5px #FF4D6A', 
+                        'neon-green-lg': '0 0 15px #39FF14, 0 0 5px #39FF14', 
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom CSS for Background Animation and Neon Effects */
+        body {
+            background: linear-gradient(-45deg, #0F0F1A, #05050A, #0F0F1A);
+            background-size: 400% 400%;
+            animation: gradient-shift 20s ease infinite;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            color: #E5E7EB;
+        }
+        /* -------------------------------------------------
+   NEW: Background image for the login page only
+   ------------------------------------------------- */
+body {
+    /* keep the animated gradient as a fallback */
+    background: 
+        linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)),   /* dark overlay */
+        linear-gradient(-45deg, #0F0F1A, #05050A, #0F0F1A);
+    background-image: url('images/ultimate-gaming-setup.jpg');   /* <-- your image */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;   /* optional – makes it stay while scrolling */
+    animation: gradient-shift 20s ease infinite;
+}
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .neon-pulse { animation: text-glow 2s infinite alternate; }
+        @keyframes text-glow {
+            from { text-shadow: 0 0 5px var(--tw-colors-neon-blue); }
+            to { text-shadow: 0 0 15px var(--tw-colors-neon-blue), 0 0 25px rgba(77, 255, 255, 0.5); }
+        }
+        .neon-border {
+            border: 2px solid transparent;
+            box-shadow: 0 0 10px rgba(77, 255, 255, 0.2);
+            transition: box-shadow 0.3s, transform 0.3s, border-color 0.3s;
+        }
+        .neon-border:hover {
+            transform: translateY(-4px);
+            border-color: #4DFFFF;
+            box-shadow: 0 0 20px rgba(77, 255, 255, 0.8);
+        }
+        .form-input {
+            background: rgba(26, 26, 46, 0.8);
+            border: 2px solid rgba(77, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            border-color: #4DFFFF;
+            box-shadow: 0 0 15px rgba(77, 255, 255, 0.5);
+            outline: none;
+        }
+        
+        /* Custom Google Button Styling */
+        #googleSignInBtn iframe {
+            border-radius: 9999px !important;
+            border: 0 !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        
+        #googleSignInBtn iframe:hover {
+            box-shadow: 0 0 24px rgba(77, 255, 255, 0.9), 0 0 10px rgba(57, 255, 20, 0.4) !important;
+            transform: translateY(-2px) scale(1.01) !important;
+        }
+
+        /* Wrapper enhancement for Google button */
+        #googleSignInBtn {
+            background: linear-gradient(135deg, rgba(77,255,255,0.15), rgba(57,255,20,0.08));
+            padding: 6px;
+            border-radius: 9999px;
+            box-shadow: 0 0 10px rgba(77,255,255,0.25);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        #googleSignInBtn:hover {
+            box-shadow: 0 0 18px rgba(77,255,255,0.5), 0 0 10px rgba(57,255,20,0.25);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="min-h-screen flex items-center justify-center px-4">
+        <div class="max-w-md w-full">
+            <!-- Logo and Title -->
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center space-x-2 text-4xl font-extrabold text-neon-blue tracking-wider neon-pulse mb-4">
+                    <svg class="w-10 h-10 text-neon-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.871v4.258a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>ARCADE HUB</span>
+                </div>
+                <h1 class="text-2xl font-bold text-white mb-2">Welcome Back!</h1>
+                <p class="text-solid white">Sign in to access your gaming dashboard </p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="bg-dark-secondary/80 backdrop-blur-sm rounded-2xl p-8 neon-border">
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-neon-blue mb-2">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                            placeholder="Enter your email"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-neon-blue mb-2">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                            placeholder="Enter your password"
+                        >
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input 
+                                id="remember-me" 
+                                name="remember-me" 
+                                type="checkbox" 
+                                class="h-4 w-4 text-neon-blue focus:ring-neon-blue border-gray-300 rounded"
+                            >
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-300">
+                                Remember me
+                            </label>
+                        </div>
+                        <div class="text-sm">
+                            <a href="#" class="font-medium text-neon-blue hover:text-neon-green transition duration-200">
+                                Forgot password?
+                            </a>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit"
+                        class="w-full bg-neon-blue text-dark-primary font-bold py-3 px-4 rounded-lg shadow-neon-blue-lg transition duration-300 hover:bg-white hover:shadow-neon-green-lg text-lg"
+                    >
+                        SIGN IN
+                    </button>
+                </form>
+
+                <!-- Divider -->
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-600"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-dark-secondary text-gray-400">Or continue with</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Login Buttons -->
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                    <div id="googleSignInBtn" class="w-full"></div>
+
+                    <button class="w-full inline-flex justify-center items-center py-2 px-4 rounded-full text-sm font-medium text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 shadow-lg hover:from-blue-400 hover:via-blue-500 hover:to-blue-600 hover:shadow-neon-blue-lg hover:scale-105 transition-all duration-200">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        <span class="ml-2">Facebook</span>
+                    </button>
+                </div>
+
+                <!-- Sign Up Link -->
+                <div class="mt-6 text-center">
+                    <p class="text-gray-400">
+                        Don't have an account? 
+                        <button id="showSignup" class="font-medium text-neon-blue hover:text-neon-green transition duration-200">
+                            Sign up here
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Sign Up Form (Hidden by default) -->
+            <div id="signupForm" class="bg-dark-secondary/80 backdrop-blur-sm rounded-2xl p-8 neon-border mt-6 hidden">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">Create Account</h2>
+                    <p class="text-gray-400">Join the ultimate gaming experience</p>
+                </div>
+
+                <form id="signupFormElement" class="space-y-6">
+                    <div>
+                        <label for="signup-name" class="block text-sm font-medium text-neon-blue mb-2">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="signup-name" 
+                            name="name"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                            placeholder="Enter your full name"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="signup-email" class="block text-sm font-medium text-neon-blue mb-2">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="signup-email" 
+                            name="email"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                            placeholder="Enter your email"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label for="signup-password" class="block text-sm font-medium text-neon-blue mb-2">Password</label>
+                        <input 
+                            type="password" 
+                            id="signup-password" 
+                            name="password"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                            placeholder="Create a password"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-neon-blue mb-2">Confirm Password</label>
+                        <input 
+                            type="password" 
+                            id="confirm-password" 
+                            name="confirmPassword"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                            placeholder="Confirm your password"
+                        >
+                    </div>
+
+                    <div class="flex items-center">
+                        <input 
+                            id="terms" 
+                            name="terms" 
+                            type="checkbox" 
+                            required
+                            class="h-4 w-4 text-neon-blue focus:ring-neon-blue border-gray-300 rounded"
+                        >
+                        <label for="terms" class="ml-2 block text-sm text-gray-300">
+                            I agree to the <a href="#" class="text-neon-blue hover:text-neon-green">Terms of Service</a> and <a href="#" class="text-neon-blue hover:text-neon-green">Privacy Policy</a>
+                        </label>
+                    </div>
+
+                    <button 
+                        type="submit"
+                        class="w-full bg-neon-green text-dark-primary font-bold py-3 px-4 rounded-lg shadow-neon-green-lg transition duration-300 hover:bg-white hover:shadow-neon-blue-lg text-lg"
+                    >
+                        CREATE ACCOUNT
+                    </button>
+                </form>
+
+                <!-- Back to Login -->
+                <div class="mt-6 text-center">
+                    <p class="text-gray-400">
+                        Already have an account? 
+                        <button id="showLogin" class="font-medium text-neon-blue hover:text-neon-green transition duration-200">
+                            Sign in here
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Message Box -->
+            <div id="message-box" class="fixed top-20 left-1/2 transform -translate-x-1/2 hidden bg-neon-green text-dark-primary font-semibold py-3 px-6 rounded-lg shadow-neon-green-lg z-50 transition duration-300">
+                Message Text
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google OAuth Configuration
+        const GOOGLE_CLIENT_ID = '187147874687-j9kpu22o3k8dus7uj07tt6o9o3skrl6l.apps.googleusercontent.com';
+        
+        // Helper function to get the correct server URL
+        function getServerUrl() {
+            // Always use localhost:3000 for the server
+            return 'http://localhost:3000';
+        }
+        
+        // Initialize Google OAuth when the page loads
+        window.addEventListener('load', () => {
+            // Check if user is already logged in
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                window.location.href = getServerUrl() + '/';
+                return;
+            }
+            
+            // Initialize Google OAuth with popup configuration
+            if (typeof google !== 'undefined') {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleSignIn,
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                    use_fedcm_for_prompt: false  // Disable FedCM to avoid the error
+                });
+                
+                // Render the Google sign-in button
+                google.accounts.id.renderButton(
+                    document.getElementById('googleSignInBtn'),
+                    {
+                        theme: 'filled_blue',
+                        size: 'large',
+                        text: 'continue_with',
+                        shape: 'pill',
+                        logo_alignment: 'left',
+                        width: '100%'
+                    }
+                );
+            }
+        });
+
+        // Handle Google Sign-In
+        function handleGoogleSignIn(response) {
+            try {
+                showMessage('Authenticating with Google...', 'success');
+                
+                // Decode the JWT token
+                const payload = JSON.parse(atob(response.credential.split('.')[1]));
+                
+                console.log('Google user info:', payload);
+                console.log('Current location:', window.location.href);
+                
+                // Send Google token to server for verification
+                authenticateWithGoogle(response.credential, payload);
+                
+            } catch (error) {
+                console.error('Google sign-in error:', error);
+                showMessage('Google authentication failed', 'error');
+            }
+        }
+
+        // Authenticate with server using Google token
+        async function authenticateWithGoogle(credential, userInfo) {
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        credential: credential,
+                        userInfo: userInfo
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    showMessage('Authentication failed. Please try again.', 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('Google login successful! Redirecting...', 'success');
+                    
+                    // Redirect to main page with auth params in query string
+                    setTimeout(() => {
+                        const baseUrl = getServerUrl() + '/';
+                        const params = new URLSearchParams({
+                            isLoggedIn: 'true',
+                            authToken: data.token,
+                            userEmail: data.user.email,
+                            userName: data.user.name,
+                            userId: data.user.id,
+                            loginMethod: 'google'
+                        });
+                        const redirectUrlWithParams = `${baseUrl}?${params.toString()}`;
+                        console.log('Redirecting to:', redirectUrlWithParams);
+                        window.location.href = redirectUrlWithParams;
+                        
+                        // Fallback redirect after 2 seconds if the first one fails
+                        setTimeout(() => {
+                            if (window.location.pathname.includes('login')) {
+                                console.log('Fallback redirect triggered');
+                                window.location.replace(redirectUrlWithParams);
+                            }
+                        }, 2000);
+                    }, 1000);
+                } else {
+                    showMessage(data.error || 'Google authentication failed', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showMessage(`Network error: ${error.message}`, 'error');
+            }
+        }
+
+        // Form switching logic
+        document.getElementById('showSignup').addEventListener('click', () => {
+            document.getElementById('loginForm').parentElement.classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+        });
+
+        document.getElementById('showLogin').addEventListener('click', () => {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').parentElement.classList.remove('hidden');
+        });
+
+        // Message display function
+        function showMessage(text, type = 'success') {
+            const messageBox = document.getElementById('message-box');
+            messageBox.textContent = text;
+            messageBox.className = messageBox.className.replace('bg-neon-green', '');
+            messageBox.className = messageBox.className.replace('bg-neon-red', '');
+            
+            if (type === 'error') {
+                messageBox.classList.add('bg-neon-red');
+            } else {
+                messageBox.classList.add('bg-neon-green');
+            }
+            
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Simple validation
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('Signing you in...', 'success');
+                
+                console.log('Sending login request...', { email, password: '***' });
+                
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    showMessage(`Incorrect login details. Please try again.`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.success) {
+                    showMessage('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect to main page with auth params in query string
+                    setTimeout(() => {
+                        const baseUrl = getServerUrl() + '/';
+                        const params = new URLSearchParams({
+                            isLoggedIn: 'true',
+                            authToken: data.token,
+                            userEmail: data.user.email,
+                            userName: data.user.name,
+                            userId: data.user.id,
+                            loginMethod: 'password'
+                        });
+                        const redirectUrlWithParams = `${baseUrl}?${params.toString()}`;
+                        console.log('Redirecting to:', redirectUrlWithParams);
+                        window.location.href = redirectUrlWithParams;
+                        
+                        // Fallback redirect after 2 seconds if the first one fails
+                        setTimeout(() => {
+                            if (window.location.pathname.includes('login')) {
+                                console.log('Fallback redirect triggered');
+                                window.location.replace(redirectUrlWithParams);
+                            }
+                        }, 2000);
+                    }, 1000);
+                } else {
+                    showMessage(data.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage(`Network error: ${error.message}`, 'error');
+            }
+        });
+
+        // Signup form submission
+        document.getElementById('signupFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Simple validation
+            if (!name || !email || !password || !confirmPassword) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('Creating your account...', 'success');
+                
+                console.log('Sending signup request...', { name, email, password: '***', confirmPassword: '***' });
+                
+                const response = await fetch('http://localhost:3000/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password, confirmPassword })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    showMessage(`Incorrect login details. Please try again.`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.success) {
+                    showMessage('Account created successfully! Redirecting...', 'success');
+                    
+                    // Redirect to main page with auth params in query string
+                    setTimeout(() => {
+                        const baseUrl = getServerUrl() + '/';
+                        const params = new URLSearchParams({
+                            isLoggedIn: 'true',
+                            authToken: data.token,
+                            userEmail: data.user.email,
+                            userName: data.user.name,
+                            userId: data.user.id,
+                            loginMethod: 'password'
+                        });
+                        const redirectUrlWithParams = `${baseUrl}?${params.toString()}`;
+                        console.log('Redirecting to:', redirectUrlWithParams);
+                        window.location.href = redirectUrlWithParams;
+                        
+                        // Fallback redirect after 2 seconds if the first one fails
+                        setTimeout(() => {
+                            if (window.location.pathname.includes('login')) {
+                                console.log('Fallback redirect triggered');
+                                window.location.replace(redirectUrlWithParams) ;
+                            }
+                        }, 2000);
+                    }, 1000);
+                } else {
+                    showMessage(data.error || 'Signup failed', 'error');
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                showMessage(`Network error: ${error.message}`, 'error');
+            }
+        });
+
+    </script>
+</body>
+</html>
